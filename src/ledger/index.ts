@@ -14,38 +14,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  ********************************************************************************/
-/* eslint-disable*/
-import ledgerApp from "./ledger-app"
-
-// intentionally ambiguous to confuse webpack (we don't need this in web builds)
-const LEDGER_NODE_HID_TRANSPORT_MODULE = "@ledgerhq/hw-transport-node-hid"
 
 const isBrowser = typeof window !== "undefined"
-// const Ledger  = module.exports
+const Ledger = module.exports
 
-const Ledger: any = {
-  app: ledgerApp,
-  LedgerApp: ledgerApp,
-  transports: {
-    u2f: require("@ledgerhq/hw-transport-u2f").default,
-    wble: require("@ledgerhq/hw-transport-web-ble").default,
+Ledger.app = Ledger.LedgerApp = require("./ledger-app")
 
-    // requiring the node transport in the browser causes a bit of an issue with webpack! this is a conditional require
-    node:
-      !isBrowser && moduleExists(LEDGER_NODE_HID_TRANSPORT_MODULE)
-        ? require(LEDGER_NODE_HID_TRANSPORT_MODULE).default
-        : null,
-  },
+Ledger.transports = {
+  u2f: require("@ledgerhq/hw-transport-u2f").default,
+  wble: require("@ledgerhq/hw-transport-web-ble").default,
+
+  // requiring the node transport in the browser causes a bit of an issue with webpack! this is a conditional require
+  node: null,
 }
 
 module.exports = Ledger
 
-export default Ledger
-
-function moduleExists(name: string) {
-  try {
-    return require.resolve(name)
-  } catch (e) {
-    return false
-  }
+function moduleExists(name) {
+  try { return require.resolve(name) }
+  catch (e) { return false }
 }
+
