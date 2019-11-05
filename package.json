@@ -1,6 +1,6 @@
 {
   "name": "@binance-chain/javascript-sdk",
-  "version": "2.16.0",
+  "version": "2.16.3",
   "license": "Apache-2.0",
   "main": "lib/index.js",
   "scripts": {
@@ -10,6 +10,7 @@
     "build": "rm -rf lib && npx babel src -d lib",
     "build:docs": "npx jsdoc-to-markdown -f src/**/*.js > docs/jsdoc.md",
     "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
     "lint": "eslint --fix src __tests__"
   },
   "dependencies": {
@@ -38,9 +39,6 @@
     "uuid": "^3.3.2",
     "varstruct": "^6.1.2",
     "websocket-stream": "^5.5.0"
-  },
-  "optionalDependencies": {
-    "@ledgerhq/hw-transport-node-hid": "^4.63.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.4.4",
