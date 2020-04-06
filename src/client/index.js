@@ -162,15 +162,19 @@ export class BncClient {
   async setPrivateKey(privateKey, localOnly = false) {
     if (privateKey !== this.privateKey) {
       const address = crypto.getAddressFromPrivateKey(privateKey, this.addressPrefix)
-      if (!address) throw new Error("address is falsy: ${address}. invalid private key?")
+      if (!address) throw new Error(`address is falsy: ${address}. invalid private key?`)
       if (address === this.address) return this // safety
       this.privateKey = privateKey
       this.address = address
       if (!localOnly) {
         // _setPkPromise is used in _sendTransaction for non-await calls
-        const promise = this._setPkPromise = this._httpClient.request("get", `${api.getAccount}/${address}`)
-        const data = await promise
-        this.account_number = data.result.account_number
+        try {
+          const promise = this._setPkPromise = this._httpClient.request("get", `${api.getAccount}/${address}`)
+          const data = await promise
+          this.account_number = data.result.account_number
+        } catch (e) {
+          throw new Error(`unable to query the address on the blockchain. try sending it some funds first: ${address}`)
+        }
       }
     }
     return this
@@ -539,6 +543,31 @@ export class BncClient {
   }
 
   /**
+   * Set account flags
+   * @param {String} address
+   * @param {Number} flags new value of account flags
+   * @param {Number} sequence optional sequence
+   * @return {Promise} resolves with response (success or fail)
+   */
+  async setAccountFlags(address, flags, sequence = null) {
+    const accCode = crypto.decodeAddress(address)
+
+    const msg = {
+      from: accCode,
+      flags: flags,
+      msgType: "SetAccountFlagsMsg"
+    }
+
+    const signMsg = {
+      flags: flags,
+      from: address
+    }
+
+    const signedTx = await this._prepareTransaction(msg, signMsg, address, sequence, "")
+    return this._broadcastDelegate(signedTx)
+  }
+
+  /**
    * Prepare a serialized raw transaction for sending to the blockchain.
    * @param {Object} msg the msg object
    * @param {Object} stdSignMsg the sign doc object used to generate a signature
@@ -646,8 +675,8 @@ export class BncClient {
 
   /**
    * get markets
+   * @param {Number} limit max 1000 is default
    * @param {Number} offset from beggining, default 0
-   * @param {Number} limit, max 1000 is default
    * @return {Promise} resolves with http response
    */
   async getMarkets(limit = 1000, offset = 0) {
@@ -676,7 +705,7 @@ export class BncClient {
     }
   }
 
-    /**
+  /**
    * get transaction
    * @param {String} hash the transaction hash
    * @return {Promise} resolves with http response
@@ -696,7 +725,7 @@ export class BncClient {
    * @param {String} symbol the market pair
    * @return {Promise} resolves with http response
    */
-  async getDepth(symbol = 'BNB_BUSD-BD1') {
+  async getDepth(symbol = "BNB_BUSD-BD1") {
     try {
       const data = await this._httpClient.request("get", `${api.getDepth}?symbol=${symbol}`)
       return data
